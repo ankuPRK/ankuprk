@@ -3,3 +3,5 @@ This documents the event camera simulator we will be using in this project: [ESI
 
 ## Installation
 The installation instructions for the ESIM simulatorm is [here](https://github.com/uzh-rpg/rpg_esim/wiki/Installation)
+
+https://help.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent

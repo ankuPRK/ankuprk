@@ -9,3 +9,5 @@ If you already have a SSH key linked to your Github account, you may proceed dir
 ## Installation
 The installation instructions for the ESIM simulatorm is [here](https://github.com/uzh-rpg/rpg_esim/wiki/Installation).
 
+## Test Installation with Planar Renderer
+After installing ESIMS, check if you've successfully installed ESIM by going through the tutorials of [Planar Renderer](https://github.com/uzh-rpg/rpg_esim/wiki/Planar-Renderer)

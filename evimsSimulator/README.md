@@ -19,7 +19,7 @@ If you already have a SSH key linked to your Github account, you may proceed dir
 The installation instructions for the ESIM simulatorm is [here](https://github.com/uzh-rpg/rpg_esim/wiki/Installation).
 
 ## Simulating Events from a Video
-This [tutorial](https://github.com/uzh-rpg/rpg_esim/wiki/Simulating-events-from-a-video) shows how to use ESIM to simulate events from a given video.
+This [tutorial](https://github.com/uzh-rpg/rpg_esim/wiki/Simulating-events-from-a-video) shows how to use ESIM to simulate events from a given video.  Individual frames from the input video (may include motion blur) will be extracted. ESIM will use the frames from the input video to simulate events and these simulated events are visualized in the ```dvs_renderer``` node.
 
 ### Warning
 **This will not work for any video**. The video needs to have a sufficiently **high framerate**: the pixel displacement between successive images needs to be small (i.e. a few pixels at most). Otherwise, the simulated events will be in poor quality.

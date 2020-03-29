@@ -9,6 +9,12 @@ If you already have a SSH key linked to your Github account, you may proceed dir
 ## Installation
 The installation instructions for the ESIM simulatorm is [here](https://github.com/uzh-rpg/rpg_esim/wiki/Installation).
 
+## Simulating Events from a Video
+This [tutorial](https://github.com/uzh-rpg/rpg_esim/wiki/Simulating-events-from-a-video) shows how to use ESIM to simulate events from a given video.
+
+### Warning
+**This will not work for any video**. The video needs to have a sufficiently **high framerate**: the pixel displacement between successive images needs to be small (i.e. a few pixels at most). Otherwise, the simulated events will be in poor quality.
+
 ## Test Installation with Planar Renderer
 Check if you've successfully installed ESIM by going through the tutorials of [Planar Renderer](https://github.com/uzh-rpg/rpg_esim/wiki/Planar-Renderer). Planar Renderer simulates a 3D camera motion in a planar scene (one plane with texture attached to it).
 

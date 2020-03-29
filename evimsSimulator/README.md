@@ -12,4 +12,4 @@ The installation instructions for the ESIM simulatorm is [here](https://github.c
 ## Test Installation with Planar Renderer
 Check if you've successfully installed ESIM by going through the tutorials of [Planar Renderer](https://github.com/uzh-rpg/rpg_esim/wiki/Planar-Renderer). Planar Renderer simulates a 3D camera motion in a planar scene (one plane with texture attached to it).
 
-To edit sensor parameters (e.g., camera, IMU), edit the ''' cfg/example.conf ''' file.
+To edit sensor parameters (e.g., camera, IMU), edit the ``` cfg/example.conf ``` file.

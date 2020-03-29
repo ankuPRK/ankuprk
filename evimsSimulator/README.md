@@ -26,6 +26,7 @@ This [tutorial](https://github.com/uzh-rpg/rpg_esim/wiki/Simulating-events-from-
 ```sudo apt install youtube-dl```
 2) Also, remember to source your workspace bash file or else you will not be able to find the simulator node ```esim_ros```. Source your bash file by adding the following line to .bashrc or type in terminal:
 ```source /sim_ws/devel/setup.bashrc```
+3) Prior to running esim, you must contact ROS master by running ```roscore```
 
 ### Warning
 **This will not work for any video**. The video needs to have a sufficiently **high framerate**: the pixel displacement between successive images needs to be small (i.e. a few pixels at most). Otherwise, the simulated events will be in poor quality.

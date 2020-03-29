@@ -1,6 +1,10 @@
 # Primer Document: ESIM
 This documents the event camera simulator we will be using in this project: [ESIM](https://github.com/uzh-rpg/rpg_esim).
 
+## Required Background Knowledge
+Using ESIM requires basic knowledge of ROS. It is highly reccomended to follow the basic ROS tutorials [here](http://wiki.ros.org/ROS/Tutorials), specifically [Understanding ROS Nodes](http://wiki.ros.org/ROS/Tutorials/UnderstandingNodes) and [Understanding ROS Topics](http://wiki.ros.org/ROS/Tutorials/UnderstandingTopics).
+
+
 ## Generate SSH Key and Link to Github Account
 SSH key must be linked to your Github account to succcessfully install the simulation. Generate your key by folliwng the Github tutorial [here](https://help.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) and upload it to your Github account [here](https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account).
 

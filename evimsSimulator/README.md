@@ -21,8 +21,11 @@ The installation instructions for the ESIM simulatorm is [here](https://github.c
 ## Simulating Events from a Video
 This [tutorial](https://github.com/uzh-rpg/rpg_esim/wiki/Simulating-events-from-a-video) shows how to use ESIM to simulate events from a given video.  Individual frames from the input video (may include motion blur) will be extracted. ESIM will use the frames from the input video to simulate events and these simulated events are visualized in the ```dvs_renderer``` node.
 
-**Note**: If you have problems using ```youtube-dl``` in the tutorial, install ```youtube-dl``` from the default repositories in all currently supported versions of Ubuntu with this command instead:
+**Notes**: 
+1) If you have problems using ```youtube-dl``` in the tutorial, install ```youtube-dl``` from the default repositories in all currently supported versions of Ubuntu with this command instead:
 ```sudo apt install youtube-dl```
+2) Also, remember to source your workspace bash file or else you will not be able to find the simulator node ```esim_ros```. Source your bash file by adding the following line to .bashrc or type in terminal:
+```source /sim_ws/devel/setup.bashrc```
 
 ### Warning
 **This will not work for any video**. The video needs to have a sufficiently **high framerate**: the pixel displacement between successive images needs to be small (i.e. a few pixels at most). Otherwise, the simulated events will be in poor quality.

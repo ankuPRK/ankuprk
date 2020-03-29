@@ -2,7 +2,12 @@
 This documents the event camera simulator we will be using in this project: [ESIM](https://github.com/uzh-rpg/rpg_esim).
 
 ## Required Background Knowledge
-Using ESIM requires basic knowledge of ROS. It is highly reccomended to follow the basic ROS tutorials [here](http://wiki.ros.org/ROS/Tutorials), specifically [Understanding ROS Nodes](http://wiki.ros.org/ROS/Tutorials/UnderstandingNodes) and [Understanding ROS Topics](http://wiki.ros.org/ROS/Tutorials/UnderstandingTopics).
+### ROS
+Using ESIM requires basic knowledge of ROS. To install ROS, click [here](http://wiki.ros.org/ROS/Installation). 
+
+After installing ROS, follow the basic ROS tutorials [here](http://wiki.ros.org/ROS/Tutorials), specifically [Understanding ROS Nodes](http://wiki.ros.org/ROS/Tutorials/UnderstandingNodes) and [Understanding ROS Topics](http://wiki.ros.org/ROS/Tutorials/UnderstandingTopics).
+
+**Note**: When setting up your ROS, it is important to use ``` catkin build ``` as opposed to ``` catkin_make ``` from the catkin_tools. ``` catkin build ```is more compartmentalized and robust to changes in workspace. Read more about the difference between ``` catkin build ``` and ``` catkin_make ``` or migrating from ``` catkin_make ``` to ``` catkin build ``` [here](https://catkin-tools.readthedocs.io/en/latest/migration.html)
 
 
 ## Generate SSH Key and Link to Github Account

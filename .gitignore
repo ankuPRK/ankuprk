@@ -226,3 +226,15 @@ static
 *.exe
 *.out
 *.app
+
+# from dso code
+*.pro
+*.pro.user
+*.pro.user*
+build*
+build-*
+*.o
+*.so
+*.a
+*.so.*
+ds0-master/thirdparty/libzip-1.1.1

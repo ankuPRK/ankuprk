@@ -8,6 +8,6 @@ The camera parameter fx, fy, px, py, cx, cy, k1, k2  can be found from downloadi
 
 Check camera pixel by https://superuser.com/questions/275502/how-to-get-information-about-an-image-picture-from-the-linux-command-line
 
-```roslaunch vins_estimator dvs.launch```
-```rosbag play boxes_translation.bag```
-```roslaunch configureTopics.launch ```
+```roslaunch vins_estimator dvs.launch```\\
+```rosbag play boxes_translation.bag```\\
+```roslaunch configureTopics.launch ```\\

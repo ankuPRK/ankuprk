@@ -19,8 +19,8 @@ Terminal 2
 
 Terminal 3
 
-```rosbag play \PATH TO FILE\boxes_translation.bag```
+```rosbag play /PATH TO FILE/boxes_translation.bag```
 
 Terminal 4
 
-```roslaunch \VINS-Mono\launch\configureTopics.launch ```
+```roslaunch /VINS-Mono/launch/configureTopics.launch ```

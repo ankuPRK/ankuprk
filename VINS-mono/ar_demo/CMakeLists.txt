@@ -37,7 +37,7 @@ include_directories(
 add_executable(ar_demo_node src/ar_demo_node.cpp)
 
  target_link_libraries(ar_demo_node
-   ${catkin_LIBRARIES} ${OpenCV_LIBS}
+   ${catkin_LIBRARIES} ${OpenCV_LIBS} /usr/lib/x86_64-linux-gnu/libtiff.so
  )
 
 

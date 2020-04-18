@@ -31,4 +31,11 @@ repositories:
     type: git
     url: https://github.com/ethz-asl/eigen_checks.git
     version: master
-
+  catkin_boost_python_buildtool:
+    type: git
+    url: https://github.com/ethz-asl/catkin_boost_python_buildtool
+    version: master
+  numpy_eigen:
+    type: git
+    url: https://github.com/ethz-asl/numpy_eigen
+    version: master

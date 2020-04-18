@@ -1,0 +1,11 @@
+<launch>
+	<node pkg="rosbag" type="play" name="play" args="-l /home/allison/Workspace/VinsMonoWs/src/VINS-Mono/data/boxes_translation.bag"/>
+	<!--<node pkg="evo" type="emvs_node" name="emvs_node" output="screen" launch-prefix=""/>--> 
+
+	<!-- <rosparam command="load" file="$(find evo)/launch/filter_configs.yaml" /> -->
+  <node name="imu_throttler" type="throttle" pkg="topic_tools" args="messages /dvs/imu 450 /imu0" /> 
+  <node name="cam0_throttler" type="throttle" pkg="topic_tools" args="messages /dvs/image_raw 500 /fused_image" /> 
+
+  <remap from="/optitrack/davis" to="/leica/position"/>
+
+</launch>

@@ -6,6 +6,9 @@
 #include <std_msgs/Bool.h>
 #include <cv_bridge/cv_bridge.h>
 #include <message_filters/subscriber.h>
+#include <dvs_msgs/Event.h>
+#include <dvs_msgs/EventArray.h>
+// #include <dummyerror>
 
 #include "feature_tracker.h"
 

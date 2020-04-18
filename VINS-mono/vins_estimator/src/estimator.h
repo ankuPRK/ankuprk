@@ -21,7 +21,11 @@
 #include <unordered_map>
 #include <queue>
 #include <opencv2/core/eigen.hpp>
+#include <dvs_msgs/Event.h>
+#include <dvs_msgs/EventArray.h>
 
+#include <opencv2/opencv.hpp>
+#include <iostream>
 
 class Estimator
 {

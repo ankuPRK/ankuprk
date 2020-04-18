@@ -20,6 +20,7 @@ int ROLLING_SHUTTER;
 std::string EX_CALIB_RESULT_PATH;
 std::string VINS_RESULT_PATH;
 std::string IMU_TOPIC;
+std::string EVENT_TOPIC;
 double ROW, COL;
 double TD, TR;
 
@@ -50,6 +51,7 @@ void readParameters(ros::NodeHandle &n)
     }
 
     fsSettings["imu_topic"] >> IMU_TOPIC;
+    fsSettings["event_topic"] >> EVENT_TOPIC;
 
     SOLVER_TIME = fsSettings["max_solver_time"];
     NUM_ITERATIONS = fsSettings["max_num_iterations"];

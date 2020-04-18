@@ -17,9 +17,11 @@
 vector<uchar> r_status;
 vector<float> r_err;
 queue<sensor_msgs::ImageConstPtr> img_buf;
+queue<dvs_msgs::EventArray::ConstPtr> event_buf;
+// std::mutex e_buf;
 
 ros::Publisher pub_img,pub_match;
-ros::Publisher pub_restart;
+ros::Publisher pub_restart, pub_event_img;
 
 FeatureTracker trackerData[NUM_OF_CAM];
 double first_image_time;
@@ -28,8 +30,74 @@ bool first_image_flag = true;
 double last_image_time = 0;
 bool init_pub = 0;
 
+void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
+{
+    static int count = 0;
+    ROS_INFO("event callback in ft node");
+    if(msg == NULL) {
+        ROS_ERROR("event msg NULL");
+    }
+    if(msg->events.empty()) {
+        ROS_ERROR("event msg empty");
+    }
+
+    const ros::Time& stamp = msg->events[0].ts;
+    ROS_INFO("Initial time stamp = ");
+    // ROS_INFO(stamp)
+    cout << stamp << endl;
+
+    ROS_INFO("Number of events = ");
+    cout << msg->events.size() << endl;
+    int h = msg->height;
+    int w = msg->width;
+
+    cv::Mat image(h, w, CV_8UC1, 127);
+    for (size_t i = 0; i < msg->events.size(); ++i) {
+        if(msg->events[i].polarity)
+            image.at<uchar>(msg->events[i].y, msg->events[i].x) =  255;
+        else
+            image.at<uchar>(msg->events[i].y, msg->events[i].x) =  0;
+    }
+    char filename[100];
+    sprintf(filename, "/home/rpl/abhorask/16833/eventfulSLAM/catkin_ws/temp/event_frame%d.jpg", count++);
+    cv::imwrite(filename, image);
+    cout << "Written at :" << filename << endl;
+
+    cout << "msg->header" << msg->header << endl;
+    
+    sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(msg->header, sensor_msgs::image_encodings::MONO8, image).toImageMsg();
+    img_msg->header.stamp = msg->events[msg->events.size()-1].ts;
+    pub_event_img.publish(img_msg);
+
+    // for (size_t i = 0; i < msg->events.size(); ++i) {
+    //     // events_.push_back(msg->events[i]);
+    //     ROS_INFO("[i]");
+    //     // ROS_INFO(i);
+    //     cout << i << endl;
+    //     ROS_INFO("msg->events[i].ts");
+    //     // ROS_INFO(msg->events[i].ts);
+    //     cout << msg->events[i].ts << endl;
+    //     ROS_INFO("msg->events[i].x");
+    //     // ROS_INFO(msg->events[i].x);
+    //     cout << msg->events[i].x << endl;
+    //     ROS_INFO("msg->events[i].y");
+    //     // ROS_INFO(msg->events[i].y);
+    //     cout << msg->events[i].y << endl;
+    //     ROS_INFO("msg->events[i].polarity");
+    //     // ROS_INFO(msg->events[i].polarity);
+    //     cout << msg->events[i].polarity << endl;
+    // }
+    
+    // e_buf.lock();
+    // event_buf.push(msg);
+    // e_buf.unlock();
+    // con.notify_one();
+}
+
 void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
 {
+    ROS_INFO("img_callback");
+    cout << "img_msg->header.stamp.toSec() " << img_msg->header.stamp.toSec() << endl; 
     if(first_image_flag)
     {
         first_image_flag = false;
@@ -233,6 +301,8 @@ int main(int argc, char **argv)
 
     ros::Subscriber sub_img = n.subscribe(IMAGE_TOPIC, 100, img_callback);
 
+    ros::Subscriber sub_event = n.subscribe(EVENT_TOPIC, 2000, event_callback, ros::TransportHints().tcpNoDelay());
+    pub_event_img = n.advertise<sensor_msgs::Image>("event_img", 1000);
     pub_img = n.advertise<sensor_msgs::PointCloud>("feature", 1000);
     pub_match = n.advertise<sensor_msgs::Image>("feature_img",1000);
     pub_restart = n.advertise<std_msgs::Bool>("restart",1000);

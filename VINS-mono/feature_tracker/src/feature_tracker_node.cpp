@@ -33,7 +33,8 @@ bool init_pub = 0;
 void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
 {
     static int count = 0;
-    ROS_INFO("event callback in ft node");
+    ROS_INFO("event callback in ft node, count = ");
+    cout << count << endl;
     if(msg == NULL) {
         ROS_ERROR("event msg NULL");
     }
@@ -51,23 +52,37 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
     int h = msg->height;
     int w = msg->width;
 
-    cv::Mat image(h, w, CV_8UC1, 127);
-    for (size_t i = 0; i < msg->events.size(); ++i) {
+    cv::Mat image_pos(h, w, CV_8UC1, 127);
+    cv::Mat image_neg(h, w, CV_8UC1, 127);
+    int N = 10000; 
+    ROS_INFO("before loop");
+    cout << int(msg->events.size())-N << endl;
+    for (int i = msg->events.size()-1; i > int(msg->events.size())-N && i>=0 ;--i) {
         if(msg->events[i].polarity)
-            image.at<uchar>(msg->events[i].y, msg->events[i].x) =  255;
+            image_pos.at<uchar>(msg->events[i].y, msg->events[i].x) =  255;
         else
-            image.at<uchar>(msg->events[i].y, msg->events[i].x) =  0;
+            image_neg.at<uchar>(msg->events[i].y, msg->events[i].x) =  0;
     }
-    char filename[100];
-    sprintf(filename, "/home/rpl/abhorask/16833/eventfulSLAM/catkin_ws/temp/event_frame%d.jpg", count++);
-    cv::imwrite(filename, image);
-    cout << "Written at :" << filename << endl;
+    ROS_INFO("after loop");
+
+    char filename_pos[100], filename_neg[100];
+    ROS_INFO("before save");
+    sprintf(filename_pos, "/home/rpl/data/dvs/events_fused/boxes_translation_pos/%06d.png", count);
+    ROS_INFO("after save1");
+    sprintf(filename_neg, "/home/rpl/data/dvs/events_fused/boxes_translation_neg/%06d.png", count);
+    ROS_INFO("after save2");
+    count++;
+    cv::imwrite(filename_pos, image_pos);
+    cv::imwrite(filename_neg, image_neg);
+    cout << "Written at :" << filename_pos <<filename_neg << endl;
 
     cout << "msg->header" << msg->header << endl;
     
-    sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(msg->header, sensor_msgs::image_encodings::MONO8, image).toImageMsg();
+    sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(msg->header, sensor_msgs::image_encodings::MONO8, image_pos).toImageMsg();
+    ROS_INFO("to_msg");
     img_msg->header.stamp = msg->events[msg->events.size()-1].ts;
     pub_event_img.publish(img_msg);
+    ROS_INFO("after publish");
 
     // for (size_t i = 0; i < msg->events.size(); ++i) {
     //     // events_.push_back(msg->events[i]);

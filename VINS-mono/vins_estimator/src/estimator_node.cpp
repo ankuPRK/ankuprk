@@ -7,6 +7,7 @@
 #include <ros/ros.h>
 #include <cv_bridge/cv_bridge.h>
 // #include <opencv2/opencv.hpp>
+#include <iostream>
 
 #include "estimator.h"
 #include "parameters.h"
@@ -38,6 +39,8 @@ Eigen::Vector3d gyr_0;
 bool init_feature = 0;
 bool init_imu = 1;
 double last_imu_t = 0;
+
+#define DEBUG_FLAG1 0
 
 void predict(const sensor_msgs::ImuConstPtr &imu_msg)
 {
@@ -75,6 +78,15 @@ void predict(const sensor_msgs::ImuConstPtr &imu_msg)
 
     acc_0 = linear_acceleration;
     gyr_0 = angular_velocity;
+
+    if(DEBUG_FLAG1) {
+        cout << "Inside predict recent timestamp = " << imu_msg->header.stamp << endl;
+        cout << "tmp_P\n" << tmp_P << endl;
+        cout << "tmp_V\n" << tmp_V << endl;
+        cout << "tmp_Q\n" << tmp_Q.w() << endl;
+        cout << "tmp_Q\n" << tmp_Q.vec() << endl;
+        cout << "angular_velocity\n" << angular_velocity << endl;
+    }
 }
 
 void update()
@@ -88,11 +100,22 @@ void update()
     tmp_Bg = estimator.Bgs[WINDOW_SIZE];
     acc_0 = estimator.acc_0;
     gyr_0 = estimator.gyr_0;
+    
+    cout << "Inside update latest_time = " << latest_time << endl;
+    cout << "tmp_P\n" << tmp_P << endl;
+    cout << "tmp_V\n" << tmp_V << endl;
+    cout << "tmp_Q\n" << tmp_Q.w() << endl;
+    cout << "tmp_Q\n" << tmp_Q.vec() << endl;
 
     queue<sensor_msgs::ImuConstPtr> tmp_imu_buf = imu_buf;
     for (sensor_msgs::ImuConstPtr tmp_imu_msg; !tmp_imu_buf.empty(); tmp_imu_buf.pop())
         predict(tmp_imu_buf.front());
 
+    cout << "Inside update (after the predicts) latest_time = " << latest_time << endl;
+    cout << "tmp_P\n" << tmp_P << endl;
+    cout << "tmp_V\n" << tmp_V << endl;
+    cout << "tmp_Q\n" << tmp_Q.w() << endl;
+    cout << "tmp_Q\n" << tmp_Q.vec() << endl;
 }
 
 std::vector<std::pair<std::vector<sensor_msgs::ImuConstPtr>, sensor_msgs::PointCloudConstPtr>>

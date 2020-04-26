@@ -473,19 +473,27 @@ int main(int argc, char **argv)
     double camera_visual_size = fsSettings["visualize_camera_size"];
     cameraposevisual.setScale(camera_visual_size);
     cameraposevisual.setLineWidth(camera_visual_size / 10.0);
-
+    cerr << "debug1" << endl;
 
     LOOP_CLOSURE = fsSettings["loop_closure"];
+    cerr << "debug11" << endl;
     std::string IMAGE_TOPIC;
     int LOAD_PREVIOUS_POSE_GRAPH;
     if (LOOP_CLOSURE)
     {
+        cerr << "debug12" << endl;
         ROW = fsSettings["image_height"];
         COL = fsSettings["image_width"];
+        cerr << "debug121" << endl;
         std::string pkg_path = ros::package::getPath("pose_graph");
+        cerr << "debug122" << endl;
         string vocabulary_file = pkg_path + "/../support_files/brief_k10L6.bin";
+        cerr << "debug123" << endl;
         cout << "vocabulary_file" << vocabulary_file << endl;
+        cerr << "debug12"<< vocabulary_file << endl;
         posegraph.loadVocabulary(vocabulary_file);
+
+        cerr << "debug13" << endl;
 
         BRIEF_PATTERN_FILE = pkg_path + "/../support_files/brief_pattern.yml";
         cout << "BRIEF_PATTERN_FILE" << BRIEF_PATTERN_FILE << endl;
@@ -495,6 +503,8 @@ int main(int argc, char **argv)
         fsSettings["pose_graph_save_path"] >> POSE_GRAPH_SAVE_PATH;
         fsSettings["output_path"] >> VINS_RESULT_PATH;
         fsSettings["save_image"] >> DEBUG_IMAGE;
+
+        cerr << "debug2" << endl;
 
         // create folder if not exists
         FileSystemHelper::createDirectoryIfNotExists(POSE_GRAPH_SAVE_PATH.c_str());
@@ -526,6 +536,8 @@ int main(int argc, char **argv)
 
     fsSettings.release();
 
+    cerr << "debug3" << endl;
+
     ros::Subscriber sub_imu_forward = n.subscribe("/vins_estimator/imu_propagate", 2000, imu_forward_callback);
     ros::Subscriber sub_vio = n.subscribe("/vins_estimator/odometry", 2000, vio_callback);
     ros::Subscriber sub_image = n.subscribe(IMAGE_TOPIC, 2000, image_callback);
@@ -534,11 +546,15 @@ int main(int argc, char **argv)
     ros::Subscriber sub_point = n.subscribe("/vins_estimator/keyframe_point", 2000, point_callback);
     ros::Subscriber sub_relo_relative_pose = n.subscribe("/vins_estimator/relo_relative_pose", 2000, relo_relative_pose_callback);
 
+    cerr << "debug4" << endl;
+
     pub_match_img = n.advertise<sensor_msgs::Image>("match_image", 1000);
     pub_camera_pose_visual = n.advertise<visualization_msgs::MarkerArray>("camera_pose_visual", 1000);
     pub_key_odometrys = n.advertise<visualization_msgs::Marker>("key_odometrys", 1000);
     pub_vio_path = n.advertise<nav_msgs::Path>("no_loop_path", 1000);
     pub_match_points = n.advertise<sensor_msgs::PointCloud>("match_points", 100);
+
+    cerr << "debug5" << endl;
 
     std::thread measurement_process;
     std::thread keyboard_command_process;

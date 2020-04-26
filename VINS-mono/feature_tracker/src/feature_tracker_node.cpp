@@ -8,6 +8,8 @@
 #include <message_filters/subscriber.h>
 #include <dvs_msgs/Event.h>
 #include <dvs_msgs/EventArray.h>
+#include <mutex>
+#include <list>
 // #include <dummyerror>
 
 #include "feature_tracker.h"
@@ -17,8 +19,8 @@
 vector<uchar> r_status;
 vector<float> r_err;
 queue<sensor_msgs::ImageConstPtr> img_buf;
-queue<dvs_msgs::EventArray::ConstPtr> event_buf;
-// std::mutex e_buf;
+list<dvs_msgs::EventArray::ConstPtr> event_buf;
+std::mutex e_buf;
 
 ros::Publisher pub_img,pub_match;
 ros::Publisher pub_restart, pub_event_img;
@@ -54,16 +56,54 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
 
     cv::Mat image_pos(h, w, CV_8UC1, 127);
     cv::Mat image_neg(h, w, CV_8UC1, 127);
-    int N = 10000; 
+    ROS_INFO("Before lock");
+    e_buf.lock();
+    ROS_INFO("after lock");
+
+    event_buf.push_back(msg);
+    ROS_INFO("after pushback");
+
+    int N = 5000;
+    // int n_count = 10000;
+    bool fin = false;
     ROS_INFO("before loop");
-    cout << int(msg->events.size())-N << endl;
-    for (int i = msg->events.size()-1; i > int(msg->events.size())-N && i>=0 ;--i) {
-        if(msg->events[i].polarity)
-            image_pos.at<uchar>(msg->events[i].y, msg->events[i].x) =  255;
-        else
-            image_neg.at<uchar>(msg->events[i].y, msg->events[i].x) =  0;
+    for(auto i = event_buf.rbegin(); !fin && i!=event_buf.rend(); i++) {
+        cout << "loop N=" << N << endl;
+        auto &events = (*i)->events;
+        cout << "loopo N=" << N << endl;
+        for(int j = events.size()-1; j>=0; j--) {
+            cout << "loopum N=" << N << endl;
+            if(events[j].polarity) {
+                image_pos.at<uchar>(events[j].y, events[j].x) =  255;
+                if(--N == 0) {
+                    fin = true;
+                    break;
+                }
+            }
+            // else
+            //     image_neg.at<uchar>(events[j].y, events[j].x) =  0;
+            cout << "loopaha=" << N << endl;
+        }
+        cout << "loopoo N=" << N << endl;
+        if(i == event_buf.rend()) {
+            fin = true;
+        }
     }
-    ROS_INFO("after loop");
+
+    // int N = 10000; 
+    // ROS_INFO("before loop");
+    // cout << int(msg->events.size())-N << endl;
+    // for (int i = msg->events.size()-1; i > int(msg->events.size())-N && i>=0 ;--i) {
+    //     if(msg->events[i].polarity)
+    //         image_pos.at<uchar>(msg->events[i].y, msg->events[i].x) =  255;
+    //     else
+    //         image_neg.at<uchar>(msg->events[i].y, msg->events[i].x) =  0;
+    // }
+    // ROS_INFO("after loop");
+
+
+    e_buf.unlock();
+
 
     char filename_pos[100], filename_neg[100];
     ROS_INFO("before save");
@@ -72,8 +112,8 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
     sprintf(filename_neg, "/home/rpl/data/dvs/events_fused/boxes_translation_neg/%06d.png", count);
     ROS_INFO("after save2");
     count++;
-    cv::imwrite(filename_pos, image_pos);
-    cv::imwrite(filename_neg, image_neg);
+    // cv::imwrite(filename_pos, image_pos);
+    // cv::imwrite(filename_neg, image_neg);
     cout << "Written at :" << filename_pos <<filename_neg << endl;
 
     cout << "msg->header" << msg->header << endl;
@@ -84,13 +124,16 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
     pub_event_img.publish(img_msg);
     ROS_INFO("after publish");
 
+    cout << "events[0].ts" <<  msg->events[0].ts << endl;
+    cout << "events[events.size()-1].ts" <<  msg->events[msg->events.size()-1].ts << endl;
+
     // for (size_t i = 0; i < msg->events.size(); ++i) {
     //     // events_.push_back(msg->events[i]);
     //     ROS_INFO("[i]");
     //     // ROS_INFO(i);
     //     cout << i << endl;
-    //     ROS_INFO("msg->events[i].ts");
-    //     // ROS_INFO(msg->events[i].ts);
+        // ROS_INFO("msg->events[i].ts");
+        // ROS_INFO(msg->events[i].ts);
     //     cout << msg->events[i].ts << endl;
     //     ROS_INFO("msg->events[i].x");
     //     // ROS_INFO(msg->events[i].x);
@@ -103,15 +146,16 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
     //     cout << msg->events[i].polarity << endl;
     // }
     
-    // e_buf.lock();
-    // event_buf.push(msg);
-    // e_buf.unlock();
+
     // con.notify_one();
 }
 
 void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
 {
     ROS_INFO("img_callback");
+
+    // cout << "img_msg->header.stamp " << img_msg->header.stamp << endl; 
+
     cout << "img_msg->header.stamp.toSec() " << img_msg->header.stamp.toSec() << endl; 
     if(first_image_flag)
     {

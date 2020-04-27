@@ -10,11 +10,99 @@
 #include <dvs_msgs/EventArray.h>
 #include <mutex>
 #include <list>
+#include <fstream>
 // #include <dummyerror>
 
 #include "feature_tracker.h"
 
 #define SHOW_UNDISTORTION 0
+
+struct Pose {
+    ros::Time ts;
+    Eigen::Vector3d p;
+    Eigen::Quaterniond q;
+};
+
+class GTPoses {
+    Pose zero_pose;
+    vector<Pose> gt_poses;
+    int count=0;
+    float Z = 1;
+    Eigen::Matrix3d K, K_inv;
+
+public:
+    void init(string filename) {
+        ifstream my_file_in(filename, ios::in);
+        double x, y, z, qx, qy, qz, qw;
+        ros::Time ts;
+        double t_f;
+        ROS_INFO("ANAND");
+        cout << "init 1" << endl;
+        while(my_file_in >> t_f >> x >> y >> z >> qx >> qy >> qz >> qw) {
+            ts = ros::Time(t_f);
+            Eigen::Vector3d p(x, y, z);
+            Eigen::Quaterniond q(qw, qx, qy, qz);
+            gt_poses.push_back(Pose{ts, p, q});
+        }
+        cout << "init 2" << endl;
+        zero_pose = Pose{ros::Time(0), Eigen::Vector3d(0, 0, 0), Eigen::Quaterniond(1, 0, 0, 0)};
+        cout << "init 3" << endl;
+        K << 199.092366542, 0, 132.192071378,
+             0, 198.82882047, 110.712660011, 
+             0, 0, 1;
+        K_inv = K.inverse();
+        cout << "init 4" << endl;
+    }
+
+    Pose interpolate(ros::Time stamp, Pose p1, Pose p2) {
+        float k = (stamp.toSec() - p1.ts.toSec()) / (p2.ts.toSec() - p2.ts.toSec());
+        return Pose{
+            stamp,
+            (1-k)*p1.p + k*p2.p,
+            p1.q.slerp(k, p2.q)
+        };
+    }
+
+    Pose getPose(ros::Time stamp) {
+        if(count == 0 && stamp < gt_poses[0].ts) {
+            return interpolate(stamp, zero_pose, gt_poses[0]);
+        }
+        while(count < gt_poses.size() && gt_poses[count].ts < stamp) {
+            count++;
+        }
+        if(count == gt_poses.size()) {
+            return zero_pose;
+        }
+        else if (stamp == gt_poses[count].ts) {
+            return gt_poses[count];
+        }
+        else {
+            return interpolate(stamp, gt_poses[count-1], gt_poses[count]);
+        }
+    }
+
+    // Events in descending order (they will all be aligned with the first event)
+    cv::Mat events2mat(vector<dvs_msgs::Event> events) {
+        // cout << "e2m 1" << endl;
+        cv::Mat image = cv::Mat::zeros(180, 240, CV_8UC1);
+        // cout << "e2m 2" << endl;
+        Pose P2 = getPose(events[0].ts);
+        // cout << "e2m 3" << endl;
+        for(int i = 1; i < events.size(); i++) {
+            // cout << "e2m "<< i << endl;
+            Pose P1 = getPose(events[i].ts);
+            Eigen::Matrix3d R_rel = (P2.q * P1.q.inverse()).toRotationMatrix();
+            Eigen::Vector3d t_rel = P2.q.toRotationMatrix() * (P1.p - P2.p);
+            Eigen::Vector3d v(events[i].x, events[i].y, 1);
+            Eigen::Vector3d x_w = Z*(K_inv * v);
+            x_w = R_rel*x_w + t_rel;
+            Eigen::Vector3d x = K*x_w;
+            // cout << "image mod" << endl;
+            image.at<uchar>((int)(x[1]/x[2]), (int)(x[0]/x[2])) =  255;
+        }
+        return image;
+    }
+} gtPoses;
 
 vector<uchar> r_status;
 vector<float> r_err;
@@ -66,29 +154,24 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
     int N = 5000;
     // int n_count = 10000;
     bool fin = false;
-    ROS_INFO("before loop");
+    vector<dvs_msgs::Event> events_vec; 
     for(auto i = event_buf.rbegin(); !fin && i!=event_buf.rend(); i++) {
-        cout << "loop N=" << N << endl;
         auto &events = (*i)->events;
-        cout << "loopo N=" << N << endl;
         for(int j = events.size()-1; j>=0; j--) {
-            cout << "loopum N=" << N << endl;
             if(events[j].polarity) {
-                image_pos.at<uchar>(events[j].y, events[j].x) =  255;
+                // image_pos.at<uchar>(events[j].y, events[j].x) =  255;
+                events_vec.push_back((events[j]));
                 if(--N == 0) {
                     fin = true;
                     break;
                 }
             }
-            // else
-            //     image_neg.at<uchar>(events[j].y, events[j].x) =  0;
-            cout << "loopaha=" << N << endl;
         }
-        cout << "loopoo N=" << N << endl;
         if(i == event_buf.rend()) {
             fin = true;
         }
     }
+    image_pos = gtPoses.events2mat(events_vec);
 
     // int N = 10000; 
     // ROS_INFO("before loop");
@@ -109,12 +192,13 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
     ROS_INFO("before save");
     sprintf(filename_pos, "/home/rpl/data/dvs/events_fused/boxes_translation_pos/%06d.png", count);
     ROS_INFO("after save1");
-    sprintf(filename_neg, "/home/rpl/data/dvs/events_fused/boxes_translation_neg/%06d.png", count);
+    // sprintf(filename_neg, "/home/rpl/data/dvs/events_fused/boxes_translation_neg/%06d.png", count);
     ROS_INFO("after save2");
     count++;
     // cv::imwrite(filename_pos, image_pos);
     // cv::imwrite(filename_neg, image_neg);
-    cout << "Written at :" << filename_pos <<filename_neg << endl;
+    // cout << "Written at :" << filename_pos <<filename_neg << endl;
+    cout << "Written at :" << filename_pos << endl;
 
     cout << "msg->header" << msg->header << endl;
     
@@ -358,8 +442,9 @@ int main(int argc, char **argv)
         }
     }
 
-    ros::Subscriber sub_img = n.subscribe(IMAGE_TOPIC, 100, img_callback);
+    gtPoses.init("/home/rpl/data/dvs/boxes_translation/groundtruth.txt");
 
+    ros::Subscriber sub_img = n.subscribe(IMAGE_TOPIC, 100, img_callback);
     ros::Subscriber sub_event = n.subscribe(EVENT_TOPIC, 2000, event_callback, ros::TransportHints().tcpNoDelay());
     pub_event_img = n.advertise<sensor_msgs::Image>("event_img", 1000);
     pub_img = n.advertise<sensor_msgs::PointCloud>("feature", 1000);

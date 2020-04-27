@@ -2,9 +2,9 @@
 
 #common parameters
 imu_topic: "/imu0"
-# image_topic: "/cam0/image_raw"
-image_topic: "/feature_tracker/event_img"
-event_topic: "/dvs/events"
+image_topic: "/cam0/image_raw"
+# image_topic: "/feature_tracker/event_img"
+# event_topic: "/dvs/events"
 output_path: "/home/rpl/output/"
 
 #camera calibration 

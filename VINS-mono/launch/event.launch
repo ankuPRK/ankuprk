@@ -1,5 +1,5 @@
 <launch>
-	<node pkg="rosbag" type="play" name="play" args=" /home/rpl/data/dvs/boxes_translation.bag"/>
+	<node pkg="rosbag" type="play" name="play" args=" /home/rpl/data/dvs/poster_6dof.bag"/>
 	<!--<node pkg="evo" type="emvs_node" name="emvs_node" output="screen" launch-prefix=""/>--> 
 
 	<!-- <rosparam command="load" file="$(find evo)/launch/filter_configs.yaml" /> -->

@@ -74,7 +74,7 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
         for(int j = events.size()-1; j>=0; j--) {
             cout << "loopum N=" << N << endl;
             if(events[j].polarity) {
-                image_pos.at<uchar>(events[j].y, events[j].x) =  255;
+                // image_pos.at<uchar>(events[j].y, events[j].x) =  255;
                 if(--N == 0) {
                     fin = true;
                     break;
@@ -359,6 +359,9 @@ int main(int argc, char **argv)
     }
 
     ros::Subscriber sub_img = n.subscribe(IMAGE_TOPIC, 100, img_callback);
+
+    string groundtruth_file = "/home/rpl/data/dvs/boxes_translation/groundtruth.txt";
+    gt_poses = poses_from_gt(groundtruth_file);
 
     ros::Subscriber sub_event = n.subscribe(EVENT_TOPIC, 2000, event_callback, ros::TransportHints().tcpNoDelay());
     pub_event_img = n.advertise<sensor_msgs::Image>("event_img", 1000);

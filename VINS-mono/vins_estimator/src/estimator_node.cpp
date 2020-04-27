@@ -40,7 +40,7 @@ bool init_feature = 0;
 bool init_imu = 1;
 double last_imu_t = 0;
 
-#define DEBUG_FLAG1 0
+#define DEBUG_FLAG1 1
 
 void predict(const sensor_msgs::ImuConstPtr &imu_msg)
 {

@@ -446,6 +446,8 @@ bool Estimator::relativePose(Matrix3d &relative_R, Vector3d &relative_T, int &l)
     {
         vector<pair<Vector3d, Vector3d>> corres;
         corres = f_manager.getCorresponding(i, WINDOW_SIZE);
+        if(corres.size() <= 20)
+            cout << "corres.size() = " << corres.size() << endl;
         if (corres.size() > 20)
         {
             double sum_parallax = 0;
@@ -459,6 +461,12 @@ bool Estimator::relativePose(Matrix3d &relative_R, Vector3d &relative_T, int &l)
 
             }
             average_parallax = 1.0 * sum_parallax / int(corres.size());
+            if(average_parallax * 460 <= 30) {
+                cout << average_parallax * 460 << average_parallax * 460 << endl;
+            }
+            if(average_parallax * 460 <= 30) {
+                cout << "average_parallax * 460 = " << average_parallax * 460 << endl;
+            }
             if(average_parallax * 460 > 30 && m_estimator.solveRelativeRT(corres, relative_R, relative_T))
             {
                 l = i;

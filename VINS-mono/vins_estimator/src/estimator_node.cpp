@@ -11,7 +11,8 @@
 #include "estimator.h"
 #include "parameters.h"
 #include "utility/visualization.h"
-
+#include <Eigen/Dense>
+#include <ctime>
 
 Estimator estimator;
 
@@ -28,6 +29,8 @@ std::mutex i_buf;
 std::mutex m_estimator;
 
 double latest_time;
+Eigen::Matrix4d Trans;
+Eigen::Vector3d P;
 Eigen::Vector3d tmp_P;
 Eigen::Quaterniond tmp_Q;
 Eigen::Vector3d tmp_V;
@@ -38,6 +41,23 @@ Eigen::Vector3d gyr_0;
 bool init_feature = 0;
 bool init_imu = 1;
 double last_imu_t = 0;
+
+//%%%%%%%%%%%% EDIT %%%%%%%%%%%%%//
+#include <bits/stdc++.h>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <thread>
+#include <chrono>
+
+using namespace std::chrono;
+typedef std::chrono::high_resolution_clock Clock;
+using namespace std;
+//%%%%%%%%%%%% EDIT %%%%%%%%%%%%%//
+
+
 
 void predict(const sensor_msgs::ImuConstPtr &imu_msg)
 {
@@ -75,6 +95,24 @@ void predict(const sensor_msgs::ImuConstPtr &imu_msg)
 
     acc_0 = linear_acceleration;
     gyr_0 = angular_velocity;
+
+    // std::cout << dt << " " << tmp_P.transpose() << " " << tmp_Q.vec().transpose() << " " << tmp_Q.w() << std::endl; 
+}
+
+void timer() {
+    auto start = std::chrono::high_resolution_clock::now();
+        for(int i=0; i<100; ++i)
+        {
+        std::cout << i                 
+                << " " 
+                << tmp_P.transpose() 
+                << " " 
+                << tmp_Q.vec().transpose() 
+                << " " 
+                << tmp_Q.w() 
+                << std::endl; 
+        std::this_thread::sleep_until(start + (i+1)*std::chrono::seconds(1));
+        }
 }
 
 void update()
@@ -93,6 +131,16 @@ void update()
     for (sensor_msgs::ImuConstPtr tmp_imu_msg; !tmp_imu_buf.empty(); tmp_imu_buf.pop())
         predict(tmp_imu_buf.front());
 
+    // auto now = Clock::now().time_since_epoch(); 
+    // auto time =  std::chrono::duration_cast<std::chrono::milliseconds>(now);   
+    // std::cout << time.count()
+    //           << " " 
+    //           << tmp_P.transpose() 
+    //           << " " 
+    //           << tmp_Q.vec().transpose() 
+    //           << " " 
+    //           << tmp_Q.w() 
+    //           << std::endl; 
 }
 
 std::vector<std::pair<std::vector<sensor_msgs::ImuConstPtr>, sensor_msgs::PointCloudConstPtr>>
@@ -239,9 +287,8 @@ void process()
                     rx = imu_msg->angular_velocity.x;
                     ry = imu_msg->angular_velocity.y;
                     rz = imu_msg->angular_velocity.z;
-                    estimator.processIMU(dt, Vector3d(dx, dy, dz), Vector3d(rx, ry, rz));
+                    estimator.processIMU(dt, Vector3d(dx, dy, dz), Vector3d(rx, ry, rz));                 
                     //printf("imu: dt:%f a: %f %f %f w: %f %f %f\n",dt, dx, dy, dz, rx, ry, rz);
-
                 }
                 else
                 {
@@ -317,7 +364,7 @@ void process()
             printStatistics(estimator, whole_t);
             std_msgs::Header header = img_msg->header;
             header.frame_id = "world";
-
+           
             pubOdometry(estimator, header);
             pubKeyPoses(estimator, header);
             pubCameraPose(estimator, header);
@@ -356,6 +403,14 @@ int main(int argc, char **argv)
     ros::Subscriber sub_image = n.subscribe("/feature_tracker/feature", 2000, feature_callback);
     ros::Subscriber sub_restart = n.subscribe("/feature_tracker/restart", 2000, restart_callback);
     ros::Subscriber sub_relo_points = n.subscribe("/pose_graph/match_points", 2000, relocalization_callback);
+
+    //%%%%%%%%%%%% EDIT %%%%%%%%%//
+    auto future = std::async(timer);
+
+    std::ofstream cout("/home/allison/Workspace/OrigVinsMonoWs/src/VINS-Mono/myOutput.txt", std::ofstream::trunc);
+    ios_base::sync_with_stdio(false); // performance optimizations
+    std::cout.rdbuf(cout.rdbuf());
+    //%%%%%%%%%%%% EDIT %%%%%%%%%//
 
     std::thread measurement_process{process};
     ros::spin();

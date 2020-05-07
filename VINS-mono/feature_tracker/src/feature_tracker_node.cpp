@@ -107,9 +107,9 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
 
     char filename_pos[100], filename_neg[100];
     ROS_INFO("before save");
-    sprintf(filename_pos, "/home/rpl/data/dvs/events_fused/boxes_translation_pos/%06d.png", count);
+    sprintf(filename_pos, "/mnt/data/data/dvs/events_fused/boxes_translation_pos/%06d.png", count);
     ROS_INFO("after save1");
-    sprintf(filename_neg, "/home/rpl/data/dvs/events_fused/boxes_translation_neg/%06d.png", count);
+    sprintf(filename_neg, "/mat/data/data/dvs/events_fused/boxes_translation_neg/%06d.png", count);
     ROS_INFO("after save2");
     count++;
     // cv::imwrite(filename_pos, image_pos);

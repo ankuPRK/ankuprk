@@ -17,6 +17,9 @@
 
 #define SHOW_UNDISTORTION 0
 
+bool first_event_flag = false;
+int counter = 0;
+
 struct Pose {
     ros::Time ts;
     Eigen::Vector3d p;
@@ -26,7 +29,6 @@ struct Pose {
 class GTPoses {
     Pose zero_pose;
     vector<Pose> gt_poses;
-    int count=0;
     float Z = 1;
     Eigen::Matrix3d K, K_inv;
 
@@ -55,7 +57,8 @@ public:
     }
 
     Pose interpolate(ros::Time stamp, Pose p1, Pose p2) {
-        float k = (stamp.toSec() - p1.ts.toSec()) / (p2.ts.toSec() - p2.ts.toSec());
+        // cout << "In interpolate"<<endl;
+        float k = (stamp.toSec() - p1.ts.toSec()) / (p2.ts.toSec() - p1.ts.toSec());
         return Pose{
             stamp,
             (1-k)*p1.p + k*p2.p,
@@ -64,33 +67,47 @@ public:
     }
 
     Pose getPose(ros::Time stamp) {
-        if(count == 0 && stamp < gt_poses[0].ts) {
+        int count = 0;
+        // cout << "stamp.toSec()" << stamp << endl;
+        // cout << "gt_poses[0].ts.toSec()" << gt_poses[0].ts << endl;
+        // cout << "gt_poses[gt_poses.size()-1].ts.toSec()" << gt_poses[gt_poses.size()-1].ts << endl;
+        // cout << "gt_poses.size()" << gt_poses.size() << endl;
+        // cout << "count" << count << endl;
+        if(stamp < gt_poses[0].ts) {
+            // cout << "case 1" << endl;
             return interpolate(stamp, zero_pose, gt_poses[0]);
         }
         while(count < gt_poses.size() && gt_poses[count].ts < stamp) {
+            // cout << "case 2" << endl;
             count++;
         }
         if(count == gt_poses.size()) {
+            // cout << "case 3" << endl;
             return zero_pose;
         }
         else if (stamp == gt_poses[count].ts) {
+            // cout << "case 4" << endl;
             return gt_poses[count];
         }
         else {
+            // cout << "case 5" << endl;
             return interpolate(stamp, gt_poses[count-1], gt_poses[count]);
         }
     }
 
     // Events in descending order (they will all be aligned with the first event)
-    cv::Mat events2mat(vector<dvs_msgs::Event> events) {
-        // cout << "e2m 1" << endl;
-        cv::Mat image = cv::Mat::zeros(180, 240, CV_8UC1);
+    void events2mat(vector<dvs_msgs::Event>& events, cv::Mat& image) {
+        cout << "e2m 1" << endl;
+        cout << "events.size() = " <<events.size() << endl; 
+        // cv::Mat image = cv::Mat::zeros(180, 240, CV_8UC1);
+        
         // cout << "e2m 2" << endl;
         Pose P2 = getPose(events[0].ts);
-        // cout << "e2m 3" << endl;
-        for(int i = 1; i < events.size(); i++) {
+        cout << "e2m 3" << endl;
+        for(int i = 0; i < events.size(); i++) {
             // cout << "e2m "<< i << endl;
             Pose P1 = getPose(events[i].ts);
+            // cout << "after getpose "<< i << endl;
             Eigen::Matrix3d R_rel = (P2.q * P1.q.inverse()).toRotationMatrix();
             Eigen::Vector3d t_rel = P2.q.toRotationMatrix() * (P1.p - P2.p);
             Eigen::Vector3d v(events[i].x, events[i].y, 1);
@@ -98,9 +115,20 @@ public:
             x_w = R_rel*x_w + t_rel;
             Eigen::Vector3d x = K*x_w;
             // cout << "image mod" << endl;
+            // cout << "after eigen "<< i << endl;
             image.at<uchar>((int)(x[1]/x[2]), (int)(x[0]/x[2])) =  255;
+            cout << "after cv2 "<< i << endl;
         }
-        return image;
+        cout << "ready to return " << endl;
+        return;
+        // return image;
+    }
+
+    void setInitialTime(double init_time) {
+        zero_pose.ts = ros::Time(init_time);
+        for(int i = 0; i<gt_poses.size(); i++) {
+            gt_poses[i].ts = ros::Time(gt_poses[i].ts.toSec() + init_time);
+        }
     }
 } gtPoses;
 
@@ -122,9 +150,21 @@ bool init_pub = 0;
 
 void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
 {
-    static int count = 0;
-    ROS_INFO("event callback in ft node, count = ");
-    cout << count << endl;
+
+    ROS_INFO("Before lock");
+    e_buf.lock();
+    ROS_INFO("after lock");
+
+    cout << "yo yo"  << endl;
+    ROS_INFO("event callback in ft node, counter = ");
+    cout << counter << endl;
+
+    if(first_event_flag == false) {
+        first_event_flag = true;
+        double first_event_time = msg->events[0].ts.toSec();
+        gtPoses.setInitialTime(first_event_time);
+    }
+
     if(msg == NULL) {
         ROS_ERROR("event msg NULL");
     }
@@ -143,19 +183,17 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
     int w = msg->width;
 
     cv::Mat image_pos(h, w, CV_8UC1, 127);
-    cv::Mat image_neg(h, w, CV_8UC1, 127);
-    ROS_INFO("Before lock");
-    e_buf.lock();
-    ROS_INFO("after lock");
+    // cv::Mat image_neg(h, w, CV_8UC1, 127);
 
     event_buf.push_back(msg);
     ROS_INFO("after pushback");
 
-    int N = 5000;
+    int N = 1000;
     // int n_count = 10000;
     bool fin = false;
-    vector<dvs_msgs::Event> events_vec; 
-    for(auto i = event_buf.rbegin(); !fin && i!=event_buf.rend(); i++) {
+    vector<dvs_msgs::Event> events_vec;
+    auto i = event_buf.rbegin();
+    for(; !fin && i!=event_buf.rend(); i++) {
         auto &events = (*i)->events;
         for(int j = events.size()-1; j>=0; j--) {
             if(events[j].polarity) {
@@ -171,7 +209,8 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
             fin = true;
         }
     }
-    image_pos = gtPoses.events2mat(events_vec);
+    // image_pos = gtPoses.events2mat(events_vec);
+    gtPoses.events2mat(events_vec, image_pos);
 
     // int N = 10000; 
     // ROS_INFO("before loop");
@@ -185,32 +224,34 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
     // ROS_INFO("after loop");
 
 
-    e_buf.unlock();
 
-
+    cout << "AFTER RETURN" << endl;
+    ROS_INFO("before save");
     char filename_pos[100], filename_neg[100];
     ROS_INFO("before save");
-    sprintf(filename_pos, "/home/rpl/data/dvs/events_fused/boxes_translation_pos/%06d.png", count);
+    sprintf(filename_pos, "/mnt/data/data/dvs/events_fused/boxes_translation_pos/%06d.png", counter);
     ROS_INFO("after save1");
-    // sprintf(filename_neg, "/home/rpl/data/dvs/events_fused/boxes_translation_neg/%06d.png", count);
+    // sprintf(filename_neg, "/mnt/data/data/dvs/events_fused/boxes_translation_neg/%06d.png", counter);
     ROS_INFO("after save2");
-    count++;
-    // cv::imwrite(filename_pos, image_pos);
+    counter++;
+    cv::imwrite(filename_pos, image_pos);
     // cv::imwrite(filename_neg, image_neg);
     // cout << "Written at :" << filename_pos <<filename_neg << endl;
     cout << "Written at :" << filename_pos << endl;
 
     cout << "msg->header" << msg->header << endl;
     
-    sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(msg->header, sensor_msgs::image_encodings::MONO8, image_pos).toImageMsg();
-    ROS_INFO("to_msg");
-    img_msg->header.stamp = msg->events[msg->events.size()-1].ts;
-    pub_event_img.publish(img_msg);
+    // sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(msg->header, sensor_msgs::image_encodings::MONO8, image_pos).toImageMsg();
+    // ROS_INFO("to_msg");
+    // img_msg->header.stamp = msg->events[msg->events.size()-1].ts;
+    // pub_event_img.publish(img_msg);
     ROS_INFO("after publish");
 
     cout << "events[0].ts" <<  msg->events[0].ts << endl;
     cout << "events[events.size()-1].ts" <<  msg->events[msg->events.size()-1].ts << endl;
 
+    e_buf.unlock();
+    cout << "bye bye" << endl;
     // for (size_t i = 0; i < msg->events.size(); ++i) {
     //     // events_.push_back(msg->events[i]);
     //     ROS_INFO("[i]");
@@ -230,12 +271,11 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
     //     cout << msg->events[i].polarity << endl;
     // }
     
-
-    // con.notify_one();
 }
 
 void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
 {
+    cout << "img_callback" << endl;
     ROS_INFO("img_callback");
 
     // cout << "img_msg->header.stamp " << img_msg->header.stamp << endl; 
@@ -442,7 +482,7 @@ int main(int argc, char **argv)
         }
     }
 
-    gtPoses.init("/home/rpl/data/dvs/boxes_translation/groundtruth.txt");
+    gtPoses.init("/mnt/data/data/dvs/boxes_translation/groundtruth.txt");
 
     ros::Subscriber sub_img = n.subscribe(IMAGE_TOPIC, 100, img_callback);
     ros::Subscriber sub_event = n.subscribe(EVENT_TOPIC, 2000, event_callback, ros::TransportHints().tcpNoDelay());

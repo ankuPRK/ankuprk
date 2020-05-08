@@ -9,21 +9,12 @@ import cv2
 import tailer as tl
 
 if __name__ == "__main__":
+    ## path to event camera data
     root = '/Users/arpit/Spring20/SLAM_16833/project/data/boxes_translation/'
     out_path = './events_fused_paper_pos_preint_update/'
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     pose_gt = np.loadtxt(os.path.join(root,'groundtruth.txt'))
-    # pose_gt = np.loadtxt(os.path.join(root,'update_bag_translation_3.txt'))
-    # # clean data for imu pre integration text files
-    # for i in range(len(pose_gt)):
-    #     try:
-    #         if pose_gt[i,0] >= 1:
-    #             pose_gt = np.delete(pose_gt,i,0)
-    #             i = i-1
-    #     except:
-    #         break
-    # pose_gt[:,0] = np.cumsum(pose_gt[:,0]) # for delta values
 
     calibration_params = np.loadtxt(os.path.join(root,'calib.txt'))
     K = np.array([
@@ -64,18 +55,12 @@ if __name__ == "__main__":
     # interpolate rotation for events
     times = events[:,0]
     interp_rot_matrices = slerp(times).as_matrix()
-    # out = interp_rots.as_euler('xyz',degrees=True)
-    # print(out[:3])
-    # iterp_rot_matrices = interp_rots.as_matrix()
-    # print(iterp_matrices.shape)
-
+    
     # interpolate translation
     interp1d_obj = interp1d(pose_gt[:,0], pose_gt[:,1:4], axis=0)
     events_t = interp1d_obj(times)
     # print(events_xyz[:4])
 
-
-    # fused_frames = []
     j = 0
     I_uncorrected = np.zeros((180,240))
     I = np.zeros((180,240))
@@ -85,11 +70,8 @@ if __name__ == "__main__":
     scale = 50
     for i in range(total_events):
         if i%N_events==0 and i>0:
-            # dump fused frame
-            # eps = 1e-10
-            # I = ((I/(np.max(I)+eps))*255
+            
             I = I*scale
-            # I_uncorrected = ((I_uncorrected-np.min(I_uncorrected))/(np.max(I_uncorrected)-np.min(I_uncorrected)+eps))*255
             I_uncorrected *= scale
             cv2.imwrite(os.path.join(out_path,"{:06d}_uncorrected.png".format(j)), I_uncorrected)
             cv2.imwrite(os.path.join(out_path,"{:06d}.png".format(j)), I)

@@ -9,6 +9,7 @@ import cv2
 import tailer as tl
 
 if __name__ == "__main__":
+    ## path to event camera data
     root = '/Users/arpit/Spring20/SLAM_16833/project/data/boxes_translation/'
     pose_gt = np.loadtxt(os.path.join(root,'groundtruth.txt'))
     calibration_params = np.loadtxt(os.path.join(root,'calib.txt'))
@@ -109,14 +110,10 @@ if __name__ == "__main__":
             I[x[1],x[0]] += 1
 
             
-        # fused_frames.append(I)
-        # eps = 1e-10
         scale = 50
         I = I*scale
-        # I = (I/(np.max(I)+eps))*255
         
         I_uncorrected *= scale
-        # I_uncorrected = (I_uncorrected/(np.max(I_uncorrected)+eps))*255
 
         cv2.imwrite("events_fused/{:06d}_uncorrected.png".format(i), I_uncorrected)
         cv2.imwrite("events_fused/{:06d}.png".format(i), I)

@@ -53,79 +53,75 @@ void event_callback(const dvs_msgs::EventArray::ConstPtr &msg)
     cout << msg->events.size() << endl;
     int h = msg->height;
     int w = msg->width;
-
-    cv::Mat image_pos(h, w, CV_8UC1, 127);
-    cv::Mat image_neg(h, w, CV_8UC1, 127);
-    ROS_INFO("Before lock");
-    e_buf.lock();
-    ROS_INFO("after lock");
-
     event_buf.push_back(msg);
-    ROS_INFO("after pushback");
 
-    int N = 5000;
-    // int n_count = 10000;
-    bool fin = false;
-    ROS_INFO("before loop");
-    for(auto i = event_buf.rbegin(); !fin && i!=event_buf.rend(); i++) {
-        cout << "loop N=" << N << endl;
-        auto &events = (*i)->events;
-        cout << "loopo N=" << N << endl;
-        for(int j = events.size()-1; j>=0; j--) {
-            cout << "loopum N=" << N << endl;
-            if(events[j].polarity) {
-                image_pos.at<uchar>(events[j].y, events[j].x) =  255;
-                if(--N == 0) {
-                    fin = true;
-                    break;
-                }
+    auto i = event_buf.rbegin();
+    int j = (*i)->events.size()-1;
+    e_buf.lock();
+    while(i==event_buf.rbegin())
+    {
+        cv::Mat image_pos(h, w, CV_8UC1, 127);
+        // cv::Mat image_neg(h, w, CV_8UC1, 60);
+        ROS_INFO("Before lock");
+        ROS_INFO("after lock");
+
+        ROS_INFO("after pushback");
+
+        int N = 7000;
+        bool first = true;
+        // int n_count = 10000;
+        bool fin = false;
+        for(; !fin && i!=event_buf.rend(); i++) {
+            auto &events = (*i)->events;
+            if(!first) {
+                j = (*i)->events.size()-1;
             }
-            // else
-            //     image_neg.at<uchar>(events[j].y, events[j].x) =  0;
-            cout << "loopaha=" << N << endl;
+            else {
+                first = false;
+            }
+            for(; j>=0; j--) {
+                if(events[j].polarity) {
+                    image_pos.at<uchar>(events[j].y, events[j].x) = 255;
+                    // image_pos.at<uchar>(events[j].y, events[j].x) +=  60;
+                    // if(image_pos.at<uchar>(events[j].y, events[j].x) > 200)
+                    //     image_pos.at<uchar>(events[j].y, events[j].x) -= 40;
+                    if(--N == 0) {
+                        fin = true;
+                        break;
+                    }
+                }
+                // else
+                //     image_neg.at<uchar>(events[j].y, events[j].x) =  0;
+            }
+            if(i == event_buf.rend()) {
+                fin = true;
+            }
         }
-        cout << "loopoo N=" << N << endl;
-        if(i == event_buf.rend()) {
-            fin = true;
-        }
+        cout << "N = " << N << endl;
+
+
+        char filename_pos[100], filename_neg[100];
+        ROS_INFO("before save");
+        sprintf(filename_pos, "/mnt/data/data/dvs/events_fused/boxes_translation_pos/%06d.png", count);
+        ROS_INFO("after save1");
+        sprintf(filename_neg, "/mat/data/data/dvs/events_fused/boxes_translation_neg/%06d.png", count);
+        ROS_INFO("after save2");
+        count++;
+        cv::imwrite(filename_pos, image_pos);
+        // cv::imwrite(filename_neg, image_neg);
+        cout << "Written at :" << filename_pos <<filename_neg << endl;
+
+        
+        sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(msg->header, sensor_msgs::image_encodings::MONO8, image_pos).toImageMsg();
+        ROS_INFO("to_msg");
+        img_msg->header.stamp = msg->events[j].ts;
+        pub_event_img.publish(img_msg);
+        ROS_INFO("after publish");
+
+        cout << "events[0].ts" <<  msg->events[0].ts << endl;
+        cout << "events[events.size()-1].ts" <<  msg->events[msg->events.size()-1].ts << endl;
     }
-
-    // int N = 10000; 
-    // ROS_INFO("before loop");
-    // cout << int(msg->events.size())-N << endl;
-    // for (int i = msg->events.size()-1; i > int(msg->events.size())-N && i>=0 ;--i) {
-    //     if(msg->events[i].polarity)
-    //         image_pos.at<uchar>(msg->events[i].y, msg->events[i].x) =  255;
-    //     else
-    //         image_neg.at<uchar>(msg->events[i].y, msg->events[i].x) =  0;
-    // }
-    // ROS_INFO("after loop");
-
-
     e_buf.unlock();
-
-
-    char filename_pos[100], filename_neg[100];
-    ROS_INFO("before save");
-    sprintf(filename_pos, "/mnt/data/data/dvs/events_fused/boxes_translation_pos/%06d.png", count);
-    ROS_INFO("after save1");
-    sprintf(filename_neg, "/mat/data/data/dvs/events_fused/boxes_translation_neg/%06d.png", count);
-    ROS_INFO("after save2");
-    count++;
-    // cv::imwrite(filename_pos, image_pos);
-    // cv::imwrite(filename_neg, image_neg);
-    cout << "Written at :" << filename_pos <<filename_neg << endl;
-
-    cout << "msg->header" << msg->header << endl;
-    
-    sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(msg->header, sensor_msgs::image_encodings::MONO8, image_pos).toImageMsg();
-    ROS_INFO("to_msg");
-    img_msg->header.stamp = msg->events[msg->events.size()-1].ts;
-    pub_event_img.publish(img_msg);
-    ROS_INFO("after publish");
-
-    cout << "events[0].ts" <<  msg->events[0].ts << endl;
-    cout << "events[events.size()-1].ts" <<  msg->events[msg->events.size()-1].ts << endl;
 
     // for (size_t i = 0; i < msg->events.size(); ++i) {
     //     // events_.push_back(msg->events[i]);

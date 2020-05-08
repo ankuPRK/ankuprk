@@ -1,4 +1,4 @@
-# wxyz
+# Event based Visual Inertial Odometry
 
 16833 Eventful SLAM and Mapping code.
 
